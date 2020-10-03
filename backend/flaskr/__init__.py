@@ -150,6 +150,7 @@ def create_app(test_config=None):
 				category = request.get_json()["category"]
 				difficulty = request.get_json()["difficulty"]
 
+				print(question, answer, category, difficulty)
 				new_question = Question(
 					question=question, 
 					answer=answer,
@@ -163,8 +164,8 @@ def create_app(test_config=None):
 						"question": new_question.id,
 						"total_questions": len(Question.query.all())
 					})
-		except:
-			abort(422)
+		except Exception as e:
+			raise e
 
 
 
@@ -178,12 +179,14 @@ def create_app(test_config=None):
 	'''
 	@app.route('/categories/<int:category_id>/questions', methods=['GET'])
 	def retrieve_questions_by_category(category_id):
+		
 		questions = Question.query.order_by(Question.id).filter(Question.category==category_id).all()
+		current_questions = paginate_questions(request, selection)
 
 		return jsonify({
-				"success": True,
-				"questions": [question.format() for question in questions]
-			})
+			"success": True,
+			"questions": current_questions
+		})
 
 
 	'''

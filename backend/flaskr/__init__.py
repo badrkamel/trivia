@@ -131,7 +131,7 @@ def create_app(test_config=None):
 	@app.route('/questions', methods=['POST'])
 	def new_question():
 		try:
-			search_term = request.get_json()['searchTerm']
+			search_term = request.json.get('searchTerm', None)
 			
 			if search_term:
 				result = Question.query.order_by(Question.id).filter(
@@ -179,14 +179,24 @@ def create_app(test_config=None):
 	'''
 	@app.route('/categories/<int:category_id>/questions', methods=['GET'])
 	def retrieve_questions_by_category(category_id):
-		
-		questions = Question.query.order_by(Question.id).filter(Question.category==category_id).all()
-		current_questions = paginate_questions(request, selection)
+		try:
+			category = Category.query.filter(Category.id == category_id).one_or_none()
+			if category is None:
+				abort(404)
 
-		return jsonify({
-			"success": True,
-			"questions": current_questions
-		})
+			# paginate questions, and store the current page questions in a list
+			page = request.args.get('page', 1, type=int)
+			questions = Question.query.filter(Question.category == category.id).order_by(Question.id)
+			current_questions = paginate_questions(request, questions)
+			
+			return jsonify({
+				"success": True,
+				"questions": current_questions,
+				"total_questions": len(Question.query.all()),
+				"current_category": category.type
+			})
+		except:
+			abort(422)
 
 
 	'''
